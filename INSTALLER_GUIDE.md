@@ -7,7 +7,10 @@ This guide explains how to install and run the Document Management Client using 
 ### Option 1: Using the Installer (Recommended)
 
 1. **Download the installer:**
-   - Download `DocumentManagementClient-Setup.exe` from the releases page
+   - Go to the GitHub repository releases page: `https://github.com/YOUR_USERNAME/dms_client/releases`
+   - Find the latest release (usually at the top)
+   - Click on `DocumentManagementClient-Setup.exe` to download it
+   - The file will download to your Downloads folder (usually)
 
 2. **Run the installer:**
    - Double-click the downloaded `.exe` file
@@ -30,7 +33,9 @@ This guide explains how to install and run the Document Management Client using 
 ### Option 2: Portable Executable
 
 1. **Download the executable:**
-   - Download `DocumentManagementClient.exe` from the releases page
+   - Go to the GitHub repository releases page: `https://github.com/YOUR_USERNAME/dms_client/releases`
+   - Find the latest release (usually at the top)
+   - Click on `DocumentManagementClient.exe` to download it
 
 2. **Run the application:**
    - Place the `.exe` file in any folder
@@ -44,7 +49,9 @@ This guide explains how to install and run the Document Management Client using 
 ### Using AppImage (Recommended)
 
 1. **Download the AppImage:**
-   - Download `DocumentManagementClient-x86_64.AppImage` from the releases page
+   - Go to the GitHub repository releases page: `https://github.com/YOUR_USERNAME/dms_client/releases`
+   - Find the latest release (usually at the top)
+   - Click on `DocumentManagementClient-x86_64.AppImage` to download it
 
 2. **Make it executable:**
    ```bash

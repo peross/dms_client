@@ -7,18 +7,30 @@ A cross-platform Python desktop application for document management with real-ti
 **Want to just install and run? Use the pre-built installers!**
 
 ### Windows
-1. Download `DocumentManagementClient-Setup.exe` from the [Releases](https://github.com/yourusername/dms_client/releases) page
-2. Run the installer and follow the setup wizard
-3. Launch from Start Menu or Desktop shortcut
+1. **Go to the [Releases](https://github.com/YOUR_USERNAME/dms_client/releases) page** (replace `YOUR_USERNAME` with your GitHub username)
+2. **Download the latest `DocumentManagementClient-Setup.exe`** installer file
+3. **Run the installer** and follow the setup wizard
+4. **Launch the application** from Start Menu or Desktop shortcut
 
-**See [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md) for detailed installation instructions.**
+**📖 Need help?** See [GITHUB_USER_GUIDE.md](GITHUB_USER_GUIDE.md) for a simple step-by-step guide, or [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md) for detailed instructions.
+
+**Note:** Replace `YOUR_USERNAME` in the GitHub URL with your actual GitHub username, or update the link to point to your repository's releases page.
 
 ### Linux
-1. Download `DocumentManagementClient-x86_64.AppImage` from the [Releases](https://github.com/yourusername/dms_client/releases) page
-2. Make it executable: `chmod +x DocumentManagementClient-x86_64.AppImage`
-3. Run it: `./DocumentManagementClient-x86_64.AppImage`
+1. **Go to the [Releases](https://github.com/YOUR_USERNAME/dms_client/releases) page** (replace `YOUR_USERNAME` with your GitHub username)
+2. **Download the latest `DocumentManagementClient-x86_64.AppImage`** file
+3. **Make it executable:** `chmod +x DocumentManagementClient-x86_64.AppImage`
+4. **Run it:** `./DocumentManagementClient-x86_64.AppImage`
 
 **See [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md) for detailed installation instructions.**
+
+**Note:** Replace `YOUR_USERNAME` in the GitHub URL with your actual GitHub username.
+
+---
+
+## Creating Releases for Distribution
+
+To create installers and publish them on GitHub for users to download, see [GITHUB_RELEASES.md](GITHUB_RELEASES.md).
 
 ---
 
