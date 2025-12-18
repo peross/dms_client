@@ -27,9 +27,17 @@ class ScannerDialog(QDialog):
         self.save_directory = save_directory
         self.scanned_image = None
         self.scanner_service = ScannerService()
+        # Connect error signal to show errors in dialog
+        self.scanner_service.scan_error.connect(self.on_scanner_service_error)
         self.scan_thread = None
         self.init_ui()
+        # Detect scanners after UI is initialized
         self.detect_scanners()
+    
+    def on_scanner_service_error(self, error_message):
+        """Handle scanner service errors."""
+        print(f"Scanner service error: {error_message}")
+        # Errors are handled in detect_scanners, but we can log them here
     
     def init_ui(self):
         """Initialize the UI components."""
@@ -178,17 +186,38 @@ class ScannerDialog(QDialog):
         self.status_label.setText("Detecting scanners...")
         self.scanner_combo.clear()
         self.refresh_button.setEnabled(False)
+        self.scan_button.setEnabled(True)  # Enable by default
         
+        # Clear any previous error messages
         scanners = self.scanner_service.detect_scanners()
         
-        if scanners:
+        if scanners and len(scanners) > 0:
             for scanner in scanners:
-                display_name = f"{scanner.get('vendor', 'Unknown')} {scanner.get('model', scanner.get('name', 'Unknown'))}"
+                vendor = scanner.get('vendor', 'Unknown')
+                model = scanner.get('model', 'Unknown')
+                name = scanner.get('name', 'Unknown')
+                
+                # Create display name
+                if vendor != 'Unknown' or model != 'Unknown':
+                    display_name = f"{vendor} {model}"
+                else:
+                    display_name = name
+                
                 self.scanner_combo.addItem(display_name, scanner)
+            
             self.status_label.setText(f"Found {len(scanners)} scanner(s)")
+            self.scan_button.setEnabled(True)
         else:
             self.scanner_combo.addItem("No scanners found")
-            self.status_label.setText("No scanners detected. Make sure your scanner is connected and drivers are installed.")
+            error_msg = (
+                "No scanners detected.\n\n"
+                "Troubleshooting:\n"
+                "1. Make sure your scanner is connected and powered on\n"
+                "2. Install SANE: sudo apt install sane sane-utils\n"
+                "3. Check scanner detection: scanimage -L\n"
+                "4. Check scanner permissions (may need to add user to scanner group)"
+            )
+            self.status_label.setText(error_msg)
             self.scan_button.setEnabled(False)
         
         self.refresh_button.setEnabled(True)
@@ -235,14 +264,18 @@ class ScannerDialog(QDialog):
     
     def on_scan_complete(self, image):
         """Handle scan completion."""
-        from PIL.ImageQt import ImageQt
+        from io import BytesIO
         
         self.scanned_image = image
         
         # Convert PIL image to QPixmap for preview
         try:
-            q_image = ImageQt(image)
-            pixmap = QPixmap.fromImage(q_image)
+            # Convert PIL image to QPixmap via bytes (more compatible across Pillow versions)
+            img_bytes = BytesIO()
+            image.save(img_bytes, format='PNG')
+            img_bytes.seek(0)
+            pixmap = QPixmap()
+            pixmap.loadFromData(img_bytes.read(), 'PNG')
             
             # Scale preview to fit label
             label_size = self.preview_label.size()
@@ -266,8 +299,10 @@ class ScannerDialog(QDialog):
     
     def on_scan_error(self, error_message):
         """Handle scan error."""
-        QMessageBox.critical(self, "Scan Error", error_message)
-        self.status_label.setText("Error during scan")
+        print(f"Scan error in dialog: {error_message}")
+        detailed_message = f"Scan Error:\n\n{error_message}\n\nPlease check:\n- Scanner is connected and powered on\n- Scanner is not in use by another application\n- Try clicking Refresh to re-detect the scanner"
+        QMessageBox.critical(self, "Scan Error", detailed_message)
+        self.status_label.setText(f"Error: {error_message}")
     
     def on_scan_finished(self):
         """Handle scan thread finished."""
