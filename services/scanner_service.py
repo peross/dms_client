@@ -103,7 +103,10 @@ class ScannerService(QObject):
             return self.available_scanners
         except ImportError:
             # pyinsane2 not installed - this is OK, just return empty list
-            print("pyinsane2 not installed. Scanner support unavailable.")
+            # Only print once by checking if we've already warned
+            if not hasattr(self, '_pyinsane2_warned'):
+                print("pyinsane2 not installed. Scanner support unavailable.")
+                self._pyinsane2_warned = True
             return []
         except Exception as e:
             # Log the error but don't crash - just return empty list

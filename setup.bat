@@ -75,13 +75,16 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-echo [SUCCESS] Virtual environment activated
+
+REM Always use venv's Python/pip explicitly to ensure packages install in venv
+set PIP_CMD=venv\Scripts\python.exe -m pip
+echo [INFO] Using venv Python: venv\Scripts\python.exe
 
 REM Upgrade pip (optional - continue even if it fails)
 echo [INFO] Upgrading pip...
 echo This may take a moment...
 echo.
-python -m pip install --upgrade pip
+%PIP_CMD% install --upgrade pip
 if errorlevel 1 (
     echo.
     echo [WARNING] pip upgrade had issues, but continuing...
@@ -103,7 +106,7 @@ echo [INFO] Installing Python dependencies...
 if exist requirements.txt (
     echo [INFO] Installing core dependencies first: PyQt5, watchdog, Pillow
     echo.
-    pip install PyQt5 watchdog Pillow
+    %PIP_CMD% install PyQt5 watchdog Pillow
     if errorlevel 1 (
         echo.
         echo [ERROR] Failed to install core dependencies.
@@ -119,7 +122,7 @@ if exist requirements.txt (
     echo [INFO] Installing pyinsane2 for scanner support...
     echo [INFO] Note: This may take a while and may require Visual C++ Build Tools on Windows.
     echo.
-    pip install pyinsane2
+    %PIP_CMD% install pyinsane2
     if errorlevel 1 (
         echo.
         echo [WARNING] Failed to install pyinsane2. Scanner support will not be available.
@@ -149,20 +152,20 @@ if exist requirements.txt (
 
 REM Verify installation
 echo [INFO] Verifying installation...
-python -c "from PyQt5.QtCore import PYQT_VERSION_STR; print('PyQt5:', PYQT_VERSION_STR)" 2>nul
+venv\Scripts\python.exe -c "from PyQt5.QtCore import PYQT_VERSION_STR; print('PyQt5:', PYQT_VERSION_STR)" 2>nul
 if errorlevel 1 (
     echo [ERROR] PyQt5 verification failed
     pause
     exit /b 1
 )
 
-python -c "import watchdog; print('watchdog: OK')" 2>nul
+venv\Scripts\python.exe -c "import watchdog; print('watchdog: OK')" 2>nul
 if errorlevel 1 (
     echo [WARNING] watchdog verification failed
 )
 
 if "%SCANNER_INSTALLED%"=="1" (
-    python -c "import pyinsane2; print('pyinsane2: OK')" 2>nul
+    venv\Scripts\python.exe -c "import pyinsane2; print('pyinsane2: OK')" 2>nul
     if errorlevel 1 (
         echo [WARNING] pyinsane2 verification failed - scanner support may not work
     )
@@ -170,7 +173,7 @@ if "%SCANNER_INSTALLED%"=="1" (
     echo [INFO] pyinsane2: Not installed (scanner support disabled)
 )
 
-python -c "from PIL import Image; print('Pillow: OK')" 2>nul
+venv\Scripts\python.exe -c "from PIL import Image; print('Pillow: OK')" 2>nul
 if errorlevel 1 (
     echo [WARNING] Pillow verification failed
 )
