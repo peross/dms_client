@@ -53,34 +53,69 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for more details on Qt/X11 issues.
 
 ## Installation
 
-### Linux/macOS
+### Quick Setup (Recommended)
 
-1. Create and activate a virtual environment:
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+#### Linux/macOS
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-Or use the setup script:
+Simply run the setup script:
 ```bash
 chmod +x setup.sh
 ./setup.sh
 ```
 
-### Windows
+The script will:
+- Check for Python 3.8+
+- Install system dependencies (Qt5 libraries, SANE for scanner support)
+- Create a virtual environment
+- Install all Python packages
+- Create a desktop launcher with icon for easy access
+
+#### Windows
 
 1. **Install Python 3.8+** from [python.org](https://www.python.org/downloads/)
    - Make sure to check "Add Python to PATH" during installation
 
-2. Open Command Prompt or PowerShell and navigate to the project directory:
+2. Open Command Prompt or PowerShell in the project directory and run:
 ```cmd
-cd C:\path\to\dms_client
+setup.bat
 ```
+
+The script will:
+- Check for Python 3.8+
+- Create a virtual environment
+- Install all Python packages
+- Create a desktop shortcut for easy access
+
+### Manual Installation
+
+If you prefer to install manually or the setup script doesn't work:
+
+#### Linux/macOS
+
+1. Install system dependencies (Ubuntu/Debian):
+```bash
+sudo apt install python3-venv python3-full
+sudo apt install libxcb-xinerama0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-xkb1 libxkbcommon-x11-0
+sudo apt install sane sane-utils libsane-dev  # For scanner support
+```
+
+2. Create and activate a virtual environment:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+#### Windows
+
+1. Install Python 3.8+ from [python.org](https://www.python.org/downloads/)
+   - Make sure to check "Add Python to PATH" during installation
+
+2. Open Command Prompt or PowerShell and navigate to the project directory
 
 3. Create and activate a virtual environment:
 ```cmd
@@ -93,37 +128,32 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Or use the setup script:
-```cmd
-setup.bat
-```
-
 **See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for detailed Windows setup instructions.**
 
 ## Usage
 
-### Linux/macOS
+After running the setup script, you can launch the application in several ways:
 
-1. Activate the virtual environment (if not already active):
+### Easy Way (Recommended)
+
+**Linux/macOS:**
+- Double-click "Document Management Client" in your Applications menu, or
+- Double-click "dms-client.desktop" on your Desktop
+
+**Windows:**
+- Double-click "Document Management Client" on your Desktop, or
+- Double-click "run_app.bat" in the application folder
+
+### From Command Line
+
+**Linux/macOS:**
 ```bash
-source venv/bin/activate
+./run_app.sh
 ```
 
-2. Run the application:
-```bash
-python main.py
-```
-
-### Windows
-
-1. Activate the virtual environment (if not already active):
+**Windows:**
 ```cmd
-venv\Scripts\activate
-```
-
-2. Run the application:
-```cmd
-python main.py
+run_app.bat
 ```
 
 ### First Run

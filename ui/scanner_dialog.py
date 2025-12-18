@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QPixmap, QImage, QFont
-from services.scanner_service import ScannerService, ScanThread
+from services.scanner_service import ScannerService, ScanThread, DetectScannersThread
 from ui.styles import COLORS
 
 
@@ -30,14 +30,54 @@ class ScannerDialog(QDialog):
         # Connect error signal to show errors in dialog
         self.scanner_service.scan_error.connect(self.on_scanner_service_error)
         self.scan_thread = None
+        self.detect_thread = None
         self.init_ui()
-        # Detect scanners after UI is initialized
-        self.detect_scanners()
+        # Start asynchronous scanner detection after UI is initialized
+        self.start_scanner_detection()
     
     def on_scanner_service_error(self, error_message):
         """Handle scanner service errors."""
         print(f"Scanner service error: {error_message}")
-        # Errors are handled in detect_scanners, but we can log them here
+        # Errors are handled in detection and scan threads
+    
+    def closeEvent(self, event):
+        """Handle dialog close event - cleanup threads."""
+        # Disconnect signals first to prevent callbacks after close
+        if self.detect_thread:
+            try:
+                self.detect_thread.scanners_detected.disconnect()
+                self.detect_thread.detection_error.disconnect()
+                self.detect_thread.detection_progress.disconnect()
+            except:
+                pass
+            
+            # Stop detection thread if running
+            if self.detect_thread.isRunning():
+                self.detect_thread.terminate()
+                if not self.detect_thread.wait(2000):  # Wait up to 2 seconds
+                    # Force quit if still running
+                    self.detect_thread.quit()
+                    self.detect_thread.wait(1000)
+            self.detect_thread = None
+        
+        # Stop scan thread if running
+        if self.scan_thread:
+            try:
+                self.scan_thread.scan_complete.disconnect()
+                self.scan_thread.scan_error.disconnect()
+                self.scan_thread.scan_progress.disconnect()
+            except:
+                pass
+            
+            if self.scan_thread.isRunning():
+                self.scan_thread.terminate()
+                if not self.scan_thread.wait(2000):  # Wait up to 2 seconds
+                    # Force quit if still running
+                    self.scan_thread.quit()
+                    self.scan_thread.wait(1000)
+            self.scan_thread = None
+        
+        event.accept()
     
     def init_ui(self):
         """Initialize the UI components."""
@@ -82,10 +122,16 @@ class ScannerDialog(QDialog):
         self.scanner_combo.setMinimumWidth(300)
         self.refresh_button = QPushButton("🔄 Refresh")
         self.refresh_button.setProperty("styleClass", "secondary")
-        self.refresh_button.clicked.connect(self.detect_scanners)
+        self.refresh_button.clicked.connect(self.start_scanner_detection)
+        
+        # Loading indicator for scanner detection
+        self.scanner_loading_label = QLabel("⏳ Detecting scanners...")
+        self.scanner_loading_label.setStyleSheet(f"color: {COLORS['text_secondary']}; font-style: italic;")
+        self.scanner_loading_label.setVisible(False)
         scanner_layout.addWidget(scanner_label, 0, 0)
         scanner_layout.addWidget(self.scanner_combo, 0, 1)
         scanner_layout.addWidget(self.refresh_button, 0, 2)
+        scanner_layout.addWidget(self.scanner_loading_label, 1, 0, 1, 3)
         
         scanner_group.setLayout(scanner_layout)
         layout.addWidget(scanner_group)
@@ -103,6 +149,7 @@ class ScannerDialog(QDialog):
         self.resolution_spin.setMaximum(1200)
         self.resolution_spin.setValue(300)
         self.resolution_spin.setSingleStep(50)
+        self.resolution_spin.valueChanged.connect(self.on_settings_changed)
         settings_layout.addWidget(resolution_label, 0, 0)
         settings_layout.addWidget(self.resolution_spin, 0, 1)
         
@@ -110,6 +157,7 @@ class ScannerDialog(QDialog):
         mode_label = QLabel("Color Mode:")
         self.mode_combo = QComboBox()
         self.mode_combo.addItems(["Color", "Gray", "Lineart"])
+        self.mode_combo.currentTextChanged.connect(self.on_settings_changed)
         settings_layout.addWidget(mode_label, 1, 0)
         settings_layout.addWidget(self.mode_combo, 1, 1)
         
@@ -117,6 +165,7 @@ class ScannerDialog(QDialog):
         format_label = QLabel("Save Format:")
         self.format_combo = QComboBox()
         self.format_combo.addItems(["PNG", "JPEG", "PDF"])
+        self.format_combo.currentTextChanged.connect(self.on_settings_changed)
         settings_layout.addWidget(format_label, 2, 0)
         settings_layout.addWidget(self.format_combo, 2, 1)
         
@@ -181,46 +230,128 @@ class ScannerDialog(QDialog):
         layout.addLayout(button_layout)
         self.setLayout(layout)
     
-    def detect_scanners(self):
-        """Detect available scanners."""
-        self.status_label.setText("Detecting scanners...")
-        self.scanner_combo.clear()
-        self.refresh_button.setEnabled(False)
-        self.scan_button.setEnabled(True)  # Enable by default
-        
-        # Clear any previous error messages
-        scanners = self.scanner_service.detect_scanners()
-        
-        if scanners and len(scanners) > 0:
-            for scanner in scanners:
-                vendor = scanner.get('vendor', 'Unknown')
-                model = scanner.get('model', 'Unknown')
-                name = scanner.get('name', 'Unknown')
-                
-                # Create display name
-                if vendor != 'Unknown' or model != 'Unknown':
-                    display_name = f"{vendor} {model}"
-                else:
-                    display_name = name
-                
-                self.scanner_combo.addItem(display_name, scanner)
+    def start_scanner_detection(self):
+        """Start asynchronous scanner detection."""
+        # Stop any existing detection thread properly
+        if self.detect_thread:
+            try:
+                # Disconnect signals first
+                self.detect_thread.scanners_detected.disconnect()
+                self.detect_thread.detection_error.disconnect()
+                self.detect_thread.detection_progress.disconnect()
+            except:
+                pass
             
-            self.status_label.setText(f"Found {len(scanners)} scanner(s)")
-            self.scan_button.setEnabled(True)
-        else:
-            self.scanner_combo.addItem("No scanners found")
-            error_msg = (
-                "No scanners detected.\n\n"
-                "Troubleshooting:\n"
-                "1. Make sure your scanner is connected and powered on\n"
-                "2. Install SANE: sudo apt install sane sane-utils\n"
-                "3. Check scanner detection: scanimage -L\n"
-                "4. Check scanner permissions (may need to add user to scanner group)"
-            )
-            self.status_label.setText(error_msg)
-            self.scan_button.setEnabled(False)
+            if self.detect_thread.isRunning():
+                self.detect_thread.requestInterruption()
+                self.detect_thread.quit()
+                if not self.detect_thread.wait(1000):
+                    self.detect_thread.terminate()
+                    self.detect_thread.wait(500)
+            self.detect_thread = None
         
-        self.refresh_button.setEnabled(True)
+        # Clear combo and show loading indicator
+        self.scanner_combo.clear()
+        self.scanner_combo.setEnabled(False)
+        self.refresh_button.setEnabled(False)
+        self.scan_button.setEnabled(False)
+        self.scanner_loading_label.setVisible(True)
+        self.status_label.setText("Detecting scanners...")
+        
+        # Create and start detection thread
+        self.detect_thread = DetectScannersThread(self.scanner_service)
+        self.detect_thread.scanners_detected.connect(self.on_scanners_detected)
+        self.detect_thread.detection_error.connect(self.on_detection_error)
+        self.detect_thread.detection_progress.connect(self.status_label.setText)
+        self.detect_thread.finished.connect(self.on_detection_thread_finished)
+        self.detect_thread.start()
+    
+    def on_detection_thread_finished(self):
+        """Handle detection thread finished signal."""
+        # Clean up thread reference when it's done
+        if self.detect_thread:
+            try:
+                self.detect_thread.scanners_detected.disconnect()
+                self.detect_thread.detection_error.disconnect()
+                self.detect_thread.detection_progress.disconnect()
+                self.detect_thread.finished.disconnect()
+            except:
+                pass
+            self.detect_thread = None
+    
+    def on_scanners_detected(self, scanners):
+        """Handle scanner detection completion."""
+        try:
+            self.scanner_loading_label.setVisible(False)
+            self.scanner_combo.setEnabled(True)
+            self.refresh_button.setEnabled(True)
+            
+            if scanners and len(scanners) > 0:
+                for scanner in scanners:
+                    vendor = scanner.get('vendor', 'Unknown')
+                    model = scanner.get('model', 'Unknown')
+                    name = scanner.get('name', 'Unknown')
+                    
+                    # Create display name
+                    if vendor != 'Unknown' or model != 'Unknown':
+                        display_name = f"{vendor} {model}"
+                    else:
+                        display_name = name
+                    
+                    self.scanner_combo.addItem(display_name, scanner)
+                
+                self.status_label.setText(f"Found {len(scanners)} scanner(s). Ready to scan.")
+                self.scan_button.setEnabled(True)
+            else:
+                self.scanner_combo.addItem("No scanners found")
+                self.status_label.setText(
+                    "No scanners detected. Make sure your scanner is connected and click Refresh."
+                )
+                self.scan_button.setEnabled(False)
+            
+            # Clean up thread
+            if self.detect_thread:
+                self.detect_thread = None
+        except Exception as e:
+            # Handle any errors in the callback gracefully
+            print(f"Error in on_scanners_detected: {e}")
+            import traceback
+            traceback.print_exc()
+            # Still clean up UI state
+            self.scanner_loading_label.setVisible(False)
+            self.scanner_combo.setEnabled(True)
+            self.refresh_button.setEnabled(True)
+            self.scanner_combo.addItem("Detection error")
+            self.status_label.setText("An error occurred during scanner detection. Click Refresh to try again.")
+            self.scan_button.setEnabled(False)
+    
+    def on_detection_error(self, error_message):
+        """Handle scanner detection error."""
+        try:
+            self.scanner_loading_label.setVisible(False)
+            self.scanner_combo.setEnabled(True)
+            self.refresh_button.setEnabled(True)
+            self.scanner_combo.addItem("Detection failed")
+            self.status_label.setText(f"Error: {error_message}. Click Refresh to try again.")
+            self.scan_button.setEnabled(False)
+        except Exception as e:
+            # Handle errors in error handler (defensive programming)
+            print(f"Error in on_detection_error: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def on_settings_changed(self):
+        """Handle scan settings changes - provide immediate feedback."""
+        if self.scanner_combo.count() > 0 and self.scanner_combo.currentText() != "No scanners found" and self.scanner_combo.currentText() != "Detection failed":
+            resolution = self.resolution_spin.value()
+            mode = self.mode_combo.currentText()
+            format_type = self.format_combo.currentText()
+            
+            # Update status to show current settings (only if not scanning)
+            if not (self.scan_thread and self.scan_thread.isRunning()):
+                self.status_label.setText(
+                    f"Ready to scan | Resolution: {resolution} DPI | Mode: {mode} | Format: {format_type}"
+                )
     
     def start_scan(self):
         """Start scanning document."""
@@ -295,7 +426,10 @@ class ScannerDialog(QDialog):
         except Exception as e:
             self.status_label.setText(f"Scan complete, but preview error: {str(e)}")
         
-        self.save_button.setEnabled(True)
+            self.save_button.setEnabled(True)
+            
+            # Update status with current settings for next scan
+            self.on_settings_changed()
     
     def on_scan_error(self, error_message):
         """Handle scan error."""
@@ -308,6 +442,8 @@ class ScannerDialog(QDialog):
         """Handle scan thread finished."""
         self.scan_button.setEnabled(True)
         self.progress_bar.setVisible(False)
+        # Update status with current settings
+        self.on_settings_changed()
     
     def auto_save_scanned_document(self):
         """Automatically save the scanned document to the save directory."""

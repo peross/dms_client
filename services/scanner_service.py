@@ -33,7 +33,7 @@ class ScannerService(QObject):
         Detect available scanners on the system.
         
         Returns:
-            list: List of scanner device names
+            list: List of scanner device names (empty list if none found or error)
         """
         self.available_scanners = []
         try:
@@ -47,17 +47,26 @@ class ScannerService(QObject):
                 # If already initialized, that's OK
                 if "already initialized" not in str(init_error).lower():
                     print(f"Warning during pyinsane2.init(): {init_error}")
+                # Continue anyway - might work
             
-            # Try to get devices with timeout
-            devices = pyinsane2.get_devices()
-            
-            if not devices:
-                print("Warning: pyinsane2.get_devices() returned empty list")
+            # Try to get devices
+            devices = None
+            try:
+                devices = pyinsane2.get_devices()
+            except Exception as get_devices_error:
+                print(f"Error getting devices: {get_devices_error}")
                 # Try forcing a refresh
                 try:
                     devices = pyinsane2.get_devices(force_reload=True)
-                except:
-                    pass
+                except Exception as refresh_error:
+                    print(f"Error refreshing devices: {refresh_error}")
+                    # Return empty list - no scanners found
+                    return []
+            
+            if not devices:
+                print("No scanners found by pyinsane2")
+                # This is not an error - just no scanners available
+                return []
             
             if devices:
                 for device in devices:
@@ -86,9 +95,6 @@ class ScannerService(QObject):
                             'model': 'Unknown',
                             'device': device
                         })
-            else:
-                print("No scanners found by pyinsane2")
-            
             # Note: We're not calling pyinsane2.exit() here because:
             # 1. It might be needed immediately after for scanning
             # 2. pyinsane2 handles cleanup internally
@@ -96,16 +102,17 @@ class ScannerService(QObject):
             
             return self.available_scanners
         except ImportError:
-            error_msg = "pyinsane2 not installed. Please install it with: pip install pyinsane2"
-            print(error_msg)
-            self.scan_error.emit(error_msg)
+            # pyinsane2 not installed - this is OK, just return empty list
+            print("pyinsane2 not installed. Scanner support unavailable.")
             return []
         except Exception as e:
+            # Log the error but don't crash - just return empty list
             error_msg = f"Error detecting scanners: {str(e)}"
-            print(f"Scanner detection error: {error_msg}")
+            print(f"Scanner detection error (non-fatal): {error_msg}")
             import traceback
             traceback.print_exc()
-            self.scan_error.emit(error_msg)
+            # Don't emit error signal - just return empty list
+            # The UI will handle showing "No scanners found"
             return []
     
     def _reset_scanner_state(self):
@@ -617,6 +624,45 @@ class ScannerService(QObject):
             except:
                 pass
             return None
+
+
+class DetectScannersThread(QThread):
+    """Thread for detecting scanners without blocking UI."""
+    
+    scanners_detected = pyqtSignal(list)  # List of scanner info dicts
+    detection_error = pyqtSignal(str)  # Error message
+    detection_progress = pyqtSignal(str)  # Progress message
+    
+    def __init__(self, scanner_service):
+        """
+        Initialize scanner detection thread.
+        
+        Args:
+            scanner_service: ScannerService instance
+        """
+        super().__init__()
+        self.scanner_service = scanner_service
+    
+    def run(self):
+        """Run scanner detection in the thread."""
+        try:
+            self.detection_progress.emit("Detecting scanners...")
+            scanners = self.scanner_service.detect_scanners()
+            # Always emit scanners_detected signal, even if empty list
+            # This allows the UI to handle "no scanners" gracefully
+            # Check if thread was requested to stop before emitting
+            if not self.isInterruptionRequested():
+                self.scanners_detected.emit(scanners if scanners else [])
+        except Exception as e:
+            # Log error but emit empty list instead of error signal
+            # This prevents the app from treating "no scanners" as a fatal error
+            print(f"Exception in DetectScannersThread: {e}")
+            import traceback
+            traceback.print_exc()
+            # Emit empty list so UI shows "No scanners found" message
+            # Only if thread wasn't interrupted
+            if not self.isInterruptionRequested():
+                self.scanners_detected.emit([])
 
 
 class ScanThread(QThread):
