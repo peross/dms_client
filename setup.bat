@@ -99,24 +99,27 @@ REM Initialize scanner installed flag
 set SCANNER_INSTALLED=0
 
 REM Install Python dependencies
-echo [INFO] Installing Python dependencies from requirements.txt...
+echo [INFO] Installing Python dependencies...
 if exist requirements.txt (
-    echo [INFO] Installing core dependencies first...
-    pip install "PyQt5>=5.15.0" "watchdog>=2.1.0" "Pillow>=9.0.0"
+    echo [INFO] Installing core dependencies first (PyQt5, watchdog, Pillow)...
+    echo.
+    pip install PyQt5 watchdog Pillow
     if errorlevel 1 (
+        echo.
         echo [ERROR] Failed to install core dependencies.
         echo.
         echo Please check your internet connection and try again.
         pause
         exit /b 1
     )
+    echo.
     echo [SUCCESS] Core dependencies installed
     
     echo.
     echo [INFO] Installing pyinsane2 (scanner support)...
     echo [INFO] Note: This may take a while and may require Visual C++ Build Tools on Windows.
     echo.
-    pip install "pyinsane2>=2.0.6"
+    pip install pyinsane2
     if errorlevel 1 (
         echo.
         echo [WARNING] Failed to install pyinsane2. Scanner support will not be available.
@@ -136,6 +139,7 @@ if exist requirements.txt (
         echo [SUCCESS] pyinsane2 installed successfully
         set SCANNER_INSTALLED=1
     )
+    echo.
     echo [SUCCESS] Python dependencies installation complete
 ) else (
     echo [ERROR] requirements.txt not found!
