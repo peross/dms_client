@@ -8,6 +8,8 @@ Since you're developing on Linux but need to create Windows `.exe` installers, h
 
 GitHub Actions will build Windows installers automatically in the cloud. This is the easiest and most reliable method.
 
+**Note:** If you get billing errors, see [ALTERNATIVE_BUILD_OPTIONS.md](ALTERNATIVE_BUILD_OPTIONS.md) for solutions. GitHub Actions is free for public repositories, but you may need to add a payment method to your account.
+
 ### How to Use
 
 1. **Push your code to GitHub** (if not already done)
@@ -37,11 +39,43 @@ The repository includes two GitHub Actions workflows:
 - `.github/workflows/build-release.yml` - Builds on tag releases
 - `.github/workflows/build-on-demand.yml` - Manual trigger (use this for testing)
 
-## Option 2: Wine (Advanced)
+## Option 1b: Fix GitHub Actions Billing
 
-**Best for:** Quick local testing, if you're comfortable with Wine
+If you're getting billing errors:
+
+1. Go to GitHub Settings → Billing
+2. Add a payment method (even if you won't be charged for public repos)
+3. GitHub Actions is **free for public repositories** (2000 minutes/month)
+4. After adding payment method, workflows will work again
+
+**See [ALTERNATIVE_BUILD_OPTIONS.md](ALTERNATIVE_BUILD_OPTIONS.md) for detailed alternatives.**
+
+## Option 2: Wine (Build Locally) ⚡
+
+**Quick Start:** Use the provided script: `./build_windows_wine.sh`
+
+**Best for:** Quick local builds without cloud services
 
 Wine allows you to run Windows executables on Linux. You can use it to run PyInstaller and create Windows executables.
+
+### Quick Build Script
+
+We've included a script to make this easier:
+
+```bash
+# Install Wine first (if not installed)
+sudo apt-get install wine
+
+# Install Python in Wine (one time setup)
+wget https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe
+wine python-3.10.11-amd64.exe
+# Make sure to check "Add Python to PATH" during installation
+
+# Build the executable
+./build_windows_wine.sh
+```
+
+This will create `dist/DocumentManagementClient.exe` - a standalone executable that users can run directly.
 
 ### Setup
 

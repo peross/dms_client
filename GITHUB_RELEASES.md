@@ -8,9 +8,12 @@ GitHub Releases allow you to package and distribute your application installers.
 
 ## Prerequisites
 
+**If you're developing on Linux:** See [BUILD_FROM_LINUX.md](BUILD_FROM_LINUX.md) for how to build Windows installers from Linux using GitHub Actions (recommended).
+
 1. **Build the installers** (see [BUILD.md](BUILD.md))
    - Windows: `build_windows.bat` → `build/windows/build_installer.bat`
    - Linux: `./build_linux.sh`
+   - **Or use GitHub Actions** (automated, works from any platform)
 
 2. **Have the installer files ready:**
    - `dist/DocumentManagementClient-Setup.exe` (Windows installer)
