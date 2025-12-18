@@ -2,6 +2,30 @@
 
 A cross-platform Python desktop application for document management with real-time file tracking.
 
+## For End Users - Quick Install
+
+**Want to just install and run? Use the pre-built installers!**
+
+### Windows
+1. Download `DocumentManagementClient-Setup.exe` from the [Releases](https://github.com/yourusername/dms_client/releases) page
+2. Run the installer and follow the setup wizard
+3. Launch from Start Menu or Desktop shortcut
+
+**See [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md) for detailed installation instructions.**
+
+### Linux
+1. Download `DocumentManagementClient-x86_64.AppImage` from the [Releases](https://github.com/yourusername/dms_client/releases) page
+2. Make it executable: `chmod +x DocumentManagementClient-x86_64.AppImage`
+3. Run it: `./DocumentManagementClient-x86_64.AppImage`
+
+**See [INSTALLER_GUIDE.md](INSTALLER_GUIDE.md) for detailed installation instructions.**
+
+---
+
+## For Developers - Building from Source
+
+If you want to modify the code or build your own installers, continue reading below.
+
 ## Features
 
 - Select a location to track for document management
