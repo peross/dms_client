@@ -72,19 +72,32 @@ The script will:
 
 #### Windows
 
-1. **Install Python 3.8+** from [python.org](https://www.python.org/downloads/)
+1. **Download the application:**
+   - Go to the GitHub repository
+   - Click "Code" → "Download ZIP"
+   - Extract the ZIP file to a folder (e.g., `C:\Users\YourName\Documents\dms_client`)
+
+2. **Install Python 3.8+** from [python.org](https://www.python.org/downloads/)
    - Make sure to check "Add Python to PATH" during installation
 
-2. Open Command Prompt or PowerShell in the project directory and run:
-```cmd
-setup.bat
-```
+3. **Run setup:**
+   - Open Command Prompt (Press `Win + R`, type `cmd`, press Enter)
+   - Navigate to the extracted folder:
+     ```cmd
+     cd C:\Users\YourName\Documents\dms_client
+     ```
+   - Run the setup script:
+     ```cmd
+     setup.bat
+     ```
 
 The script will:
 - Check for Python 3.8+
 - Create a virtual environment
 - Install all Python packages
 - Create a desktop shortcut for easy access
+
+**For detailed step-by-step instructions, see [WINDOWS_INSTALL_GUIDE.md](WINDOWS_INSTALL_GUIDE.md)**
 
 ### Manual Installation
 
@@ -128,7 +141,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for detailed Windows setup instructions.**
+**See [WINDOWS_INSTALL_GUIDE.md](WINDOWS_INSTALL_GUIDE.md) for detailed step-by-step Windows installation instructions.**
 
 ## Usage
 

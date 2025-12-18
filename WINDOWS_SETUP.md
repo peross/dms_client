@@ -2,6 +2,35 @@
 
 This guide will help you set up and run the Document Management Client on Windows.
 
+## Quick Start (Recommended)
+
+If you downloaded the app from GitHub:
+
+1. **Download Python 3.8+** from [python.org](https://www.python.org/downloads/)
+   - Make sure to check "Add Python to PATH" during installation
+
+2. **Download the application**
+   - Go to the GitHub repository
+   - Click the green "Code" button → "Download ZIP"
+   - Extract the ZIP file to a folder (e.g., `C:\Users\YourName\Documents\dms_client`)
+
+3. **Run the setup script**
+   - Open Command Prompt (Press `Win + R`, type `cmd`, press Enter)
+   - Navigate to the application folder:
+     ```cmd
+     cd C:\Users\YourName\Documents\dms_client
+     ```
+   - Run the setup:
+     ```cmd
+     setup.bat
+     ```
+
+4. **Launch the application**
+   - Double-click "Document Management Client" on your Desktop, or
+   - Double-click `run_app.bat` in the application folder
+
+That's it! The setup script does everything for you.
+
 ## Prerequisites
 
 1. **Python 3.8 or higher**

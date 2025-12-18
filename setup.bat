@@ -84,11 +84,30 @@ if errorlevel 1 (
 REM Install Python dependencies
 echo [INFO] Installing Python dependencies from requirements.txt...
 if exist requirements.txt (
-    pip install -r requirements.txt
+    echo [INFO] Installing core dependencies first...
+    pip install PyQt5>=5.15.0 watchdog>=2.1.0 Pillow>=9.0.0
     if errorlevel 1 (
-        echo [ERROR] Failed to install dependencies.
+        echo [ERROR] Failed to install core dependencies.
         pause
         exit /b 1
+    )
+    
+    echo [INFO] Installing pyinsane2 (scanner support)...
+    echo [INFO] Note: This may take a while and may require Visual C++ Build Tools on Windows.
+    pip install pyinsane2>=2.0.6
+    if errorlevel 1 (
+        echo [WARNING] Failed to install pyinsane2. Scanner support will not be available.
+        echo [INFO] This is often due to missing Visual C++ Build Tools.
+        echo [INFO] To fix this, you can:
+        echo   1. Install Visual Studio Build Tools from: https://visualstudio.microsoft.com/downloads/
+        echo   2. Select "C++ build tools" workload during installation
+        echo   3. Re-run setup.bat
+        echo.
+        echo [INFO] The application will still work, but scanner functionality will be disabled.
+        set SCANNER_INSTALLED=0
+    ) else (
+        echo [SUCCESS] pyinsane2 installed successfully
+        set SCANNER_INSTALLED=1
     )
     echo [SUCCESS] Python dependencies installed
 ) else (
@@ -111,9 +130,13 @@ if errorlevel 1 (
     echo [WARNING] watchdog verification failed
 )
 
-python -c "import pyinsane2; print('pyinsane2: OK')" 2>nul
-if errorlevel 1 (
-    echo [WARNING] pyinsane2 verification failed (scanner support may not work)
+if "%SCANNER_INSTALLED%"=="1" (
+    python -c "import pyinsane2; print('pyinsane2: OK')" 2>nul
+    if errorlevel 1 (
+        echo [WARNING] pyinsane2 verification failed (scanner support may not work)
+    )
+) else (
+    echo [INFO] pyinsane2: Not installed (scanner support disabled)
 )
 
 python -c "from PIL import Image; print('Pillow: OK')" 2>nul
