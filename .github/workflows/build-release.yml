@@ -1,0 +1,161 @@
+name: Build Windows and Linux Installers
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    name: Build Windows Installer
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        architecture: 'x64'
+        
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r build_requirements.txt
+        pip install -r requirements.txt
+        
+    - name: Build Windows executable
+      run: |
+        python build\convert_icon.py icon.png build\windows\icon.ico
+        python -m PyInstaller dms_client.spec --clean --noconfirm
+      shell: cmd
+      
+    - name: Check for executable
+      run: |
+        if not exist "dist\DocumentManagementClient.exe" exit /b 1
+      shell: cmd
+      
+    - name: Download Inno Setup
+      uses: AmrEldib1/inno-setup-downloader@v1.3
+      with:
+        version: '6.2.2'
+        
+    - name: Build installer
+      run: |
+        "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" build\windows\installer.iss
+      shell: cmd
+      continue-on-error: true
+      
+    - name: Check for installer or use executable
+      run: |
+        if exist "dist\DocumentManagementClient-Setup.exe" (
+          echo INSTALLER=DocumentManagementClient-Setup.exe >> $env:GITHUB_ENV
+          echo BUILD_TYPE=installer >> $env:GITHUB_ENV
+        ) else if exist "dist\DocumentManagementClient.exe" (
+          echo INSTALLER=DocumentManagementClient.exe >> $env:GITHUB_ENV
+          echo BUILD_TYPE=executable >> $env:GITHUB_ENV
+        ) else (
+          echo "Neither installer nor executable found!"
+          exit /b 1
+        )
+      shell: cmd
+      
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-installer
+        path: |
+          dist/DocumentManagementClient-Setup.exe
+          dist/DocumentManagementClient.exe
+        retention-days: 30
+
+  build-linux:
+    runs-on: ubuntu-latest
+    name: Build Linux AppImage
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libxcb-xinerama0 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 libxcb-xkb1 libxkbcommon-x11-0
+        
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r build_requirements.txt
+        pip install -r requirements.txt
+        
+    - name: Install appimagetool
+      run: |
+        wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x appimagetool-x86_64.AppImage
+        sudo mv appimagetool-x86_64.AppImage /usr/local/bin/appimagetool
+        
+    - name: Build Linux executable
+      run: |
+        python3 -m PyInstaller dms_client.spec --clean --noconfirm
+        chmod +x dist/DocumentManagementClient
+        
+    - name: Create AppImage
+      run: |
+        ./build_linux.sh || echo "AppImage creation failed, but executable should be available"
+        
+    - name: Upload Linux artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-appimage
+        path: |
+          dist/DocumentManagementClient-x86_64.AppImage
+          dist/DocumentManagementClient
+        retention-days: 30
+      continue-on-error: true
+
+  create-release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    name: Create GitHub Release
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download Windows artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-installer
+        path: ./release-artifacts/windows
+        
+    - name: Download Linux artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: linux-appimage
+        path: ./release-artifacts/linux
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ./release-artifacts/windows/*
+          ./release-artifacts/linux/*
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
