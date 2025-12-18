@@ -207,6 +207,14 @@ dms_client/
 └── requirements.txt       # Dependencies
 ```
 
+## Updating the Application
+
+See [UPDATE.md](UPDATE.md) for detailed instructions on how to update your installed application.
+
+## Uninstalling the Application
+
+See [UNINSTALL.md](UNINSTALL.md) for instructions on how to remove the application.
+
 ## License
 
 This project is provided as-is for educational/personal use.
