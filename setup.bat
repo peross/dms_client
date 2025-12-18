@@ -102,7 +102,7 @@ REM Install Python dependencies
 echo [INFO] Installing Python dependencies from requirements.txt...
 if exist requirements.txt (
     echo [INFO] Installing core dependencies first...
-    pip install PyQt5>=5.15.0 watchdog>=2.1.0 Pillow>=9.0.0
+    pip install "PyQt5>=5.15.0" "watchdog>=2.1.0" "Pillow>=9.0.0"
     if errorlevel 1 (
         echo [ERROR] Failed to install core dependencies.
         echo.
@@ -116,7 +116,7 @@ if exist requirements.txt (
     echo [INFO] Installing pyinsane2 (scanner support)...
     echo [INFO] Note: This may take a while and may require Visual C++ Build Tools on Windows.
     echo.
-    pip install pyinsane2>=2.0.6
+    pip install "pyinsane2>=2.0.6"
     if errorlevel 1 (
         echo.
         echo [WARNING] Failed to install pyinsane2. Scanner support will not be available.
