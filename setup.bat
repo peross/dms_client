@@ -70,16 +70,33 @@ echo [INFO] Activating virtual environment...
 call venv\Scripts\activate.bat
 if errorlevel 1 (
     echo [ERROR] Failed to activate virtual environment.
+    echo.
+    echo Please check that the venv folder exists and try again.
     pause
     exit /b 1
 )
+echo [SUCCESS] Virtual environment activated
 
-REM Upgrade pip
+REM Upgrade pip (optional - continue even if it fails)
 echo [INFO] Upgrading pip...
-python -m pip install --upgrade pip --quiet
+echo This may take a moment...
+echo.
+python -m pip install --upgrade pip
 if errorlevel 1 (
-    echo [WARNING] Failed to upgrade pip. Continuing anyway...
+    echo.
+    echo [WARNING] pip upgrade had issues, but continuing...
+    echo [INFO] This is usually not critical - using existing pip version
+    echo.
+) else (
+    echo.
+    echo [SUCCESS] pip upgrade completed
+    echo.
 )
+echo [INFO] Continuing with package installation...
+echo.
+
+REM Initialize scanner installed flag
+set SCANNER_INSTALLED=0
 
 REM Install Python dependencies
 echo [INFO] Installing Python dependencies from requirements.txt...
@@ -88,28 +105,38 @@ if exist requirements.txt (
     pip install PyQt5>=5.15.0 watchdog>=2.1.0 Pillow>=9.0.0
     if errorlevel 1 (
         echo [ERROR] Failed to install core dependencies.
+        echo.
+        echo Please check your internet connection and try again.
         pause
         exit /b 1
     )
+    echo [SUCCESS] Core dependencies installed
     
+    echo.
     echo [INFO] Installing pyinsane2 (scanner support)...
     echo [INFO] Note: This may take a while and may require Visual C++ Build Tools on Windows.
+    echo.
     pip install pyinsane2>=2.0.6
     if errorlevel 1 (
+        echo.
         echo [WARNING] Failed to install pyinsane2. Scanner support will not be available.
+        echo.
         echo [INFO] This is often due to missing Visual C++ Build Tools.
         echo [INFO] To fix this, you can:
         echo   1. Install Visual Studio Build Tools from: https://visualstudio.microsoft.com/downloads/
         echo   2. Select "C++ build tools" workload during installation
-        echo   3. Re-run setup.bat
+        echo   3. Restart your computer
+        echo   4. Re-run setup.bat
         echo.
         echo [INFO] The application will still work, but scanner functionality will be disabled.
+        echo [INFO] See WINDOWS_SCANNER_FIX.md for detailed instructions.
+        echo.
         set SCANNER_INSTALLED=0
     ) else (
         echo [SUCCESS] pyinsane2 installed successfully
         set SCANNER_INSTALLED=1
     )
-    echo [SUCCESS] Python dependencies installed
+    echo [SUCCESS] Python dependencies installation complete
 ) else (
     echo [ERROR] requirements.txt not found!
     pause
