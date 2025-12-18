@@ -101,7 +101,7 @@ set SCANNER_INSTALLED=0
 REM Install Python dependencies
 echo [INFO] Installing Python dependencies...
 if exist requirements.txt (
-    echo [INFO] Installing core dependencies first (PyQt5, watchdog, Pillow)...
+    echo [INFO] Installing core dependencies first: PyQt5, watchdog, Pillow
     echo.
     pip install PyQt5 watchdog Pillow
     if errorlevel 1 (
@@ -116,7 +116,7 @@ if exist requirements.txt (
     echo [SUCCESS] Core dependencies installed
     
     echo.
-    echo [INFO] Installing pyinsane2 (scanner support)...
+    echo [INFO] Installing pyinsane2 for scanner support...
     echo [INFO] Note: This may take a while and may require Visual C++ Build Tools on Windows.
     echo.
     pip install pyinsane2
@@ -164,7 +164,7 @@ if errorlevel 1 (
 if "%SCANNER_INSTALLED%"=="1" (
     python -c "import pyinsane2; print('pyinsane2: OK')" 2>nul
     if errorlevel 1 (
-        echo [WARNING] pyinsane2 verification failed (scanner support may not work)
+        echo [WARNING] pyinsane2 verification failed - scanner support may not work
     )
 ) else (
     echo [INFO] pyinsane2: Not installed (scanner support disabled)
